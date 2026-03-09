@@ -12,72 +12,107 @@ This API combines **two systems** in one service on port **8000**:
 2. **Topics** (`/api/v1/*`) - Auto-categorize internships
 
 ---
-## 📌 our structure
-  unified-api/
-  ├── app/
-  │   ├── __init__.py
-  │   ├── main.py                          # ✨ الـ main الموحد الجديد
-  │   │
-  │   ├── 📁 internship/                   # المشروع الأول كما هو
-  │   │   ├── __init__.py
-  │   │   ├── api/
-  │   │   │   ├── __init__.py
-  │   │   │   ├── topics.py
-  │   │   │   └── assignments.py
-  │   │   ├── core/
-  │   │   │   ├── __init__.py
-  │   │   │   ├── config.py
-  │   │   │   └── database.py
-  │   │   ├── services/
-  │   │   │   ├── __init__.py
-  │   │   │   ├── clustering.py
-  │   │   │   ├── assignment.py
-  │   │   │   └── vector_db.py
-  │   │   ├── models/
-  │   │   │   ├── __init__.py
-  │   │   │   └── schemas.py
-  │   │   └── utils/
-  │   │       ├── __init__.py
-  │   │       └── preprocessing.py
-  │   │
-  │   └── 📁 recommendations/               # المشروع التاني كما هو
-  │       ├── __init__.py
-  │       ├── core/
-  │       │   ├── __init__.py
-  │       │   ├── config.py
-  │       │   ├── database.py
-  │       │   └── events.py
-  │       ├── services/
-  │       │   ├── __init__.py
-  │       │   ├── data_service.py
-  │       │   ├── vector_service.py
-  │       │   ├── sync_service.py
-  │       │   ├── recommendation_service.py
-  │       │   ├── ranking_service.py
-  │       │   └── search_service.py
-  │       ├── api/
-  │       │   ├── __init__.py
-  │       │   ├── routes/
-  │       │   │   ├── __init__.py
-  │       │   │   ├── recommendations.py
-  │       │   │   ├── search.py
-  │       │   │   └── sync.py
-  │       │   └── schemas/
-  │       │       ├── __init__.py
-  │       │       └── recommendation_schemas.py
-  │       ├── utils/
-  │       │   └── __init__.py
-  │       └── scripts/
-  │           ├── __init__.py
-  │           └── build_vectors.py
-  │
-  ├── data/                                 # Vector DBs
-  ├── logs/                                 # Logs
-  ├── .env                                  # Environment variables موحدة
-  ├── .env.example
-  ├── requirements.txt                      # Dependencies موحدة
-  └── README.md
---
+
+## 📁 Project Structure
+
+```
+unified-api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                          # ✨ Main entry point (unified API)
+│   │
+│   ├── 📁 internship/                   # Topic Modeling System (V1)
+│   │   ├── __init__.py
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── topics.py                # /api/v1/topics/*
+│   │   │   └── assignments.py           # /api/v1/assignments/*
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py                # Internship system settings
+│   │   │   ├── database.py              # Database connection
+│   │   │   ├── events.py                # Startup/shutdown logic
+│   │   │   └── startup_utils.py         # Initialization helpers
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── clustering.py            # Topic clustering logic
+│   │   │   ├── assignment.py            # Topic assignment service
+│   │   │   └── vector_db.py             # ChromaDB for topics
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   └── schemas.py               # Request/response models
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── preprocessing.py         # Text cleaning utilities
+│   │
+│   └── 📁 recommendations/              # Recommendation Engine (V2)
+│       ├── __init__.py
+│       ├── core/
+│       │   ├── __init__.py
+│       │   ├── config.py                # Recommendation system settings
+│       │   ├── database.py              # Database connection
+│       │   ├── events.py                # Startup/shutdown logic
+│       │   └── startup_utils.py         # Vector DB initialization
+│       ├── services/
+│       │   ├── __init__.py
+│       │   ├── data_service.py          # In-memory cache management
+│       │   ├── vector_service.py        # ChromaDB operations
+│       │   ├── sync_service.py          # Incremental updates
+│       │   ├── recommendation_service.py # Recommendation logic
+│       │   ├── ranking_service.py       # Hybrid ranking (15 signals)
+│       │   └── search_service.py        # Semantic search
+│       ├── api/
+│       │   ├── __init__.py
+│       │   ├── routes/
+│       │   │   ├── __init__.py
+│       │   │   ├── recommendations.py   # /api/v2/recommendations/*
+│       │   │   ├── search.py            # /api/v2/search/*
+│       │   │   └── sync.py              # /api/v2/sync/*
+│       │   └── schemas/
+│       │       ├── __init__.py
+│       │       ├── requests.py          # Request models
+│       │       └── responses.py         # Response models
+│       ├── utils/
+│       │   ├── __init__.py
+│       │   ├── text_generator.py        # Rich text generation
+│       │   └── scoring.py               # Scoring utilities
+│       └── scripts/
+│           ├── __init__.py
+│           └── build_vectors.py         # Initial vector DB build
+│
+├── data/                                # Vector database storage
+│   ├── chroma_students_sql/            # Student embeddings
+│   ├── chroma_internships_sql/         # Internship embeddings
+│   └── chroma_internship/              # Topic embeddings
+│
+├── logs/                                # Application logs
+│   └── app.log
+│
+├── .env                                 # Environment variables
+├── .env.example                         # Example environment file
+├── requirements.txt                     # Python dependencies
+└── README.md                            # Project documentation
+```
+
+### Key Components
+
+**Main Application** (`app/main.py`):
+- Unified FastAPI application
+- Combines both systems on port 8000
+- Handles routing to V1 and V2 endpoints
+
+**Internship System** (`app/internship/`):
+- Topic modeling and clustering
+- Automatic internship categorization
+- ChromaDB for topic matching
+
+**Recommendation System** (`app/recommendations/`):
+- AI-powered student-internship matching
+- Hybrid ranking with 15+ signals
+- In-memory caching for performance
+
+---
+
 ## 🚀 Quick Start
 
 ### Base URL
