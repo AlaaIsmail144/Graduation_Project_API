@@ -49,8 +49,6 @@ Matches students with internships using AI.
 
 **When to use:** 
 - "Recommended for You" page
-- Personalized feed
-- Email suggestions
 
 **Endpoint:**
 ```
