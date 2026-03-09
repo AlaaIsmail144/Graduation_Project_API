@@ -1084,13 +1084,6 @@ But most importantly: **The system adapts**. As new types of internships emerge,
 
 ---
 
-<div align="center">
-
-**Built with ❤️, 🤖, and countless experiments**
-
-*From manual chaos to automated intelligence - that's the power of Machine Learning*
-
----
 
 **📊 From 40 hours → 3 minutes**  
 **🎯 From 85% accuracy → 95%+ accuracy**  
