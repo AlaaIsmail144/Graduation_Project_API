@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> d1302726762564361f358a3830603d2f07f74a7f
 # to make virtual env to all project 
 # .\venv\Scripts\Activate.ps1
 # .\venv\Scripts\activate.bat
