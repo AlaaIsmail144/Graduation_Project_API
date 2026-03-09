@@ -780,65 +780,6 @@ Topics:
 
 ---
 
-## 🔮 Chapter 9: The Future
-
-### Short Term (Next 3 months)
-
-**Enhanced Preprocessing**:
-- [ ] Handle non-English internships
-- [ ] Extract company information as signal
-- [ ] Parse salary ranges for topic enrichment
-
-**Better Topic Descriptions**:
-- [ ] AI-generated topic summaries
-- [ ] Example internships per topic
-- [ ] Skill requirement analysis per topic
-
-**Admin Dashboard**:
-- [ ] Visual topic explorer
-- [ ] Quality metrics over time
-- [ ] Manual topic merging/splitting
-
----
-
-### Medium Term (6-12 months)
-
-**Multi-Modal Clustering**:
-- [ ] Include company reputation scores
-- [ ] Factor in application success rates
-- [ ] Consider geographic patterns
-
-**Hierarchical Topics**:
-- [ ] Parent topic: "Engineering"
-  - Child: "Backend Development"
-  - Child: "Frontend Development"
-  - Child: "Mobile Development"
-
-**Trend Analysis**:
-- [ ] Track emerging topics over time
-- [ ] Predict growing job categories
-- [ ] Alert admins to market shifts
-
----
-
-### Long Term (The Vision)
-
-**Personalized Topic Views**:
-- Different student sees different topic organization based on profile
-- "Recommended Topics For You"
-
-**Automated Topic Maintenance**:
-- System suggests topic splits/merges
-- Auto-detects topic drift
-- Self-healing clustering
-
-**Market Intelligence**:
-- Quarterly reports on job market trends
-- Skills demand forecasting
-- Geographic opportunity analysis
-
----
-
 ## 🛠️ Technology Stack
 
 ### Machine Learning
@@ -864,59 +805,6 @@ Topics:
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.9+
-- SQL Server with ODBC Driver 17
-- Google Gemini API key
-
-### Installation
-
-```bash
-# Clone repository
-git clone https://github.com/your-repo/topic-modeling.git
-cd topic-modeling
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Download NLTK data
-python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt'); nltk.download('wordnet')"
-```
-
-### Configuration
-
-Create `.env` file:
-```env
-# Database
-INTERNSHIP_DB_DRIVER=ODBC Driver 17 for SQL Server
-INTERNSHIP_DB_SERVER=localhost\SQLEXPRESS
-INTERNSHIP_DB_NAME=InternshipPlatform
-INTERNSHIP_DB_TRUSTED_CONNECTION=yes
-
-# Google Gemini
-GEMINI_API_KEY=your_api_key_here
-
-# ChromaDB
-INTERNSHIP_CHROMA_DB_PATH=./data/chroma_internship
-
-# Clustering
-MIN_CLUSTERS=5
-MAX_CLUSTERS=15
-N_KEYWORDS=10
-```
-
-### First Run
-
-```bash
-# Start the API
-uvicorn app.main:app --reload --port 8000
-```
 
 **Automatic Initialization**:
 1. ✅ System checks for existing topics
@@ -925,74 +813,6 @@ uvicorn app.main:app --reload --port 8000
 4. 🎉 System ready!
 
 **Subsequent starts**: ~30 seconds (topics already exist)
-
----
-
-## 📡 API Usage Examples
-
-### Trigger Re-Clustering
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/topics/cluster-all-async" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "topic_version": "v2.0",
-    "n_topics": "auto"
-  }'
-```
-
-**Response**:
-```json
-{
-  "job_id": "abc-123-def-456",
-  "status": "pending",
-  "message": "Clustering started in background",
-  "check_status_url": "/api/v1/topics/job/abc-123-def-456"
-}
-```
-
-### Check Job Status
-
-```bash
-curl "http://localhost:8000/api/v1/topics/job/abc-123-def-456"
-```
-
-**Response** (In Progress):
-```json
-{
-  "job_id": "abc-123-def-456",
-  "status": "running",
-  "topic_version": "v2.0",
-  "n_topics": "auto",
-  "created_at": "2024-01-15T10:30:00",
-  "started_at": "2024-01-15T10:30:05"
-}
-```
-
-**Response** (Completed):
-```json
-{
-  "job_id": "abc-123-def-456",
-  "status": "completed",
-  "result": {
-    "topic_version": "v2.0",
-    "n_topics": 8,
-    "silhouette_score": 0.456,
-    "total_internships": 487,
-    "message": "Successfully clustered 487 internships into 8 topics"
-  }
-}
-```
-
-### Assign Single Internship
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/assignments/assign-async" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "internship_id": "550e8400-e29b-41d4-a716-446655440000"
-  }'
-```
 
 ---
 
@@ -1051,16 +871,6 @@ curl -X POST "http://localhost:8000/api/v1/assignments/assign-async" \
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Areas of interest:
-- 🔬 Experimenting with different clustering algorithms
-- 🎨 Building admin dashboards for topic management
-- 📊 Adding analytics and trend detection
-- 🌍 Supporting non-English internships
-- 🧪 Improving preprocessing pipelines
-
----
 
 ## 📄 License
 
