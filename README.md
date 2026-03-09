@@ -12,7 +12,72 @@ This API combines **two systems** in one service on port **8000**:
 2. **Topics** (`/api/v1/*`) - Auto-categorize internships
 
 ---
-
+## 📌 our structure
+unified-api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                          # ✨ الـ main الموحد الجديد
+│   │
+│   ├── 📁 internship/                   # المشروع الأول كما هو
+│   │   ├── __init__.py
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── topics.py
+│   │   │   └── assignments.py
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py
+│   │   │   └── database.py
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── clustering.py
+│   │   │   ├── assignment.py
+│   │   │   └── vector_db.py
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   └── schemas.py
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── preprocessing.py
+│   │
+│   └── 📁 recommendations/               # المشروع التاني كما هو
+│       ├── __init__.py
+│       ├── core/
+│       │   ├── __init__.py
+│       │   ├── config.py
+│       │   ├── database.py
+│       │   └── events.py
+│       ├── services/
+│       │   ├── __init__.py
+│       │   ├── data_service.py
+│       │   ├── vector_service.py
+│       │   ├── sync_service.py
+│       │   ├── recommendation_service.py
+│       │   ├── ranking_service.py
+│       │   └── search_service.py
+│       ├── api/
+│       │   ├── __init__.py
+│       │   ├── routes/
+│       │   │   ├── __init__.py
+│       │   │   ├── recommendations.py
+│       │   │   ├── search.py
+│       │   │   └── sync.py
+│       │   └── schemas/
+│       │       ├── __init__.py
+│       │       └── recommendation_schemas.py
+│       ├── utils/
+│       │   └── __init__.py
+│       └── scripts/
+│           ├── __init__.py
+│           └── build_vectors.py
+│
+├── data/                                 # Vector DBs
+├── logs/                                 # Logs
+├── .env                                  # Environment variables موحدة
+├── .env.example
+├── requirements.txt                      # Dependencies موحدة
+└── README.md
+--
 ## 🚀 Quick Start
 
 ### Base URL
