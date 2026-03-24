@@ -13,6 +13,7 @@ class InternshipSearchResult(BaseModel):
     internship_id: str
     similarity_score: float
 
+
 class SearchInternshipsResponse(BaseModel):
     query: str
     total_results: int

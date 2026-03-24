@@ -22,7 +22,7 @@ genai.configure(api_key=settings.GEMINI_API_KEY)
 class ClusteringService:
     def __init__(self):
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        self.llm_model = genai.GenerativeModel('models/gemini-2.0-flash-exp')
+        self.llm_model = genai.GenerativeModel('gemini-2.0-flash')
         
     def find_optimal_clusters(self, embeddings: np.ndarray, max_clusters: int = None) -> int:
         if max_clusters is None:
@@ -30,8 +30,17 @@ class ClusteringService:
         
         print("\n find number of optimal cluster")
         
+        n_samples = len(embeddings)
+        effective_max = min(max_clusters, n_samples // 2)
+        effective_min = min(settings.MIN_CLUSTERS, effective_max - 1)
+        effective_min = max(2, effective_min)
+        
+        if effective_min >= effective_max:
+            print(f" Small dataset, using {effective_min} clusters")
+            return effective_min
+        
         scores = []
-        K_range = range(settings.MIN_CLUSTERS, min(max_clusters + 1, len(embeddings) // 10))
+        K_range = range(effective_min, effective_max + 1)
         
         for k in K_range:
             kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
@@ -39,12 +48,14 @@ class ClusteringService:
             score = silhouette_score(embeddings, labels)
             scores.append((k, score))
         
+        if not scores:
+            return effective_min
+        
         best_k = max(scores, key=lambda x: x[1])[0]
         best_score = max(scores, key=lambda x: x[1])[1]
         print(f"optimal topics: {best_k} (score: {best_score:.3f})")
         
         return best_k
-   
     def perform_clustering(
         self, 
         df: pd.DataFrame, 
@@ -156,7 +167,6 @@ class ClusteringService:
             print(f"opps LLM refinement failed: {e}")
             return label
         
-
     def _validate_label(self, label: str) -> bool:
         if not label or len(label) < 3 or len(label) > 60:
             return False
@@ -168,7 +178,6 @@ class ClusteringService:
         
         return True
     
-
     def refine_all_labels(
         self, 
         labels: Dict[int, str], 
@@ -196,132 +205,124 @@ class ClusteringService:
         print(f"\n LLM enhancement complete! Changed {changed_count}/{len(labels)} labels\n")
         return refined
     
-
-    def save_topics_to_db(
-        self,
-        df: pd.DataFrame,
-        labels: Dict[int, str],
-        keywords: Dict[int, List[str]],
-        silhouette_score: float,
-        topic_version: str
-    ) -> List[Dict]:
-        
+    def save_topics_to_db(self, df, labels, keywords, silhouette_score, topic_version):
         print("\n save topics to database")
-        
         created_topics = []
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
             try:
                 for topic_num in sorted(labels.keys()):
                     topic_id = str(uuid.uuid4())
                     label = labels[topic_num]
                     keywords_list = keywords[topic_num]
                     doc_count = len(df[df['dominant_topic'] == topic_num])
-                    
                     description = f"internships related to {', '.join(keywords_list[:5])}"
-                    
-                    topic_num_py = int(topic_num)
-                    doc_count_py = int(doc_count)
-                    silhouette_score_py = float(silhouette_score)
                     
                     cursor.execute("""
                         INSERT INTO Topics 
-                        (topic_id, topic_version, topic_number, label, keywords, 
-                         description, silhouette_score, document_count, is_active, created_at)
+                        (TopicId, TopicVersion, TopicNumber, Label, Keywords, 
+                        Description, SilhouetteScore, DocumentCount, IsActive, CreatedAt)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, GETDATE())
                     """, (
-                        topic_id,
-                        topic_version,
-                        topic_num_py,
-                        label,
-                        str(keywords_list),
-                        description,
-                        silhouette_score_py,
-                        doc_count_py
+                        topic_id, topic_version, int(topic_num), label,
+                        str(keywords_list), description,
+                        float(silhouette_score), int(doc_count)
                     ))
                     
                     created_topics.append({
                         'topic_id': topic_id,
-                        'topic_number': topic_num_py,
+                        'topic_number': int(topic_num),
                         'label': label,
                         'keywords': keywords_list,
-                        'document_count': doc_count_py
+                        'document_count': int(doc_count)
                     })
-                    
-                    print(f" topic {topic_num_py}: {label} ({doc_count_py} docs)")
+                    print(f" topic {topic_num}: {label} ({doc_count} docs)")
                 
                 cursor.execute("""
                     UPDATE Topics 
-                    SET is_active = 0 
-                    WHERE topic_version != ? AND is_active = 1
+                    SET IsActive = 0 
+                    WHERE TopicVersion != ? AND IsActive = 1
                 """, (topic_version,))
-                
-                deactivated = cursor.rowcount
-        
+
+                # ← هنا بالظبط
+                cursor.execute("""
+                   UPDATE Internships
+                    SET CurrentTopicId = NULL,
+                        LastTopicId = NULL
+                    WHERE 
+                        CurrentTopicId IN (
+                            SELECT TopicId FROM Topics
+                            WHERE TopicVersion NOT IN (
+                                SELECT TopicVersion FROM (
+                                    SELECT DISTINCT TopicVersion,
+                                        ROW_NUMBER() OVER (ORDER BY MAX(CreatedAt) DESC) AS rn
+                                    FROM Topics
+                                    GROUP BY TopicVersion
+                                ) AS rv WHERE rn <= 2
+                            )
+                        )
+                        OR LastTopicId IN (
+                            SELECT TopicId FROM Topics
+                            WHERE TopicVersion NOT IN (
+                                SELECT TopicVersion FROM (
+                                    SELECT DISTINCT TopicVersion,
+                                        ROW_NUMBER() OVER (ORDER BY MAX(CreatedAt) DESC) AS rn
+                                    FROM Topics
+                                    GROUP BY TopicVersion
+                                ) AS rv WHERE rn <= 2
+                            )
+                        )
+                """)
+
                 cursor.execute("""
                     WITH RecentVersions AS (
-                        SELECT DISTINCT topic_version,
-                               ROW_NUMBER() OVER (ORDER BY MAX(created_at) DESC) AS rn
+                        SELECT DISTINCT TopicVersion,
+                            ROW_NUMBER() OVER (ORDER BY MAX(CreatedAt) DESC) AS rn
                         FROM Topics
-                        GROUP BY topic_version
+                        GROUP BY TopicVersion
                     )
                     DELETE FROM Topics
-                    WHERE topic_version NOT IN (
-                        SELECT topic_version 
-                        FROM RecentVersions 
-                        WHERE rn <= 2
+                    WHERE TopicVersion NOT IN (
+                        SELECT TopicVersion FROM RecentVersions WHERE rn <= 2
                     )
                 """)
-                
-                deleted = cursor.rowcount
-                if deleted > 0:
-                    print(f"   Deleted {deleted} topics from old versions")
-                else:
-                    print(f"   No old versions to delete")
-            
+
                 conn.commit()
-                print(f"\nDone Transaction committed! Saved {len(created_topics)} topics.")
+                print(f"\nDone! Saved {len(created_topics)} topics.")
                 
             except Exception as e:
                 conn.rollback()
-                print(f"\n transaction failed! Rolling back")
                 raise Exception(f"Failed to save topics: {e}")
         
         return created_topics
-    
-    def update_internship_assignments(self, df: pd.DataFrame) -> int:
-
+        
+    def update_internship_assignments(self, df):
         with get_db_connection() as conn:
             topic_mapping = pd.read_sql("""
-                SELECT topic_number, topic_id
+                SELECT TopicNumber, TopicId
                 FROM Topics
-                WHERE is_active = 1
+                WHERE IsActive = 1
             """, conn)
         
-        topic_dict = dict(zip(topic_mapping['topic_number'], topic_mapping['topic_id']))
-        
+        topic_dict = dict(zip(topic_mapping['TopicNumber'], topic_mapping['TopicId']))
         updated_count = 0
         
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
             for _, row in df.iterrows():
                 internship_id = str(row['internship_id'])
-                topic_num = int(row['dominant_topic'])  
+                topic_num = int(row['dominant_topic'])
                 topic_id = topic_dict.get(topic_num)
                 
                 if topic_id:
-                    topic_id_str = str(topic_id)
-                    
                     cursor.execute("""
-                        UPDATE Internship
-                        SET last_topic_id = current_topic_id,
-                            current_topic_id = ?,
-                            assignment_updated_at = GETDATE()
-                        WHERE internship_id = ?
-                    """, (topic_id_str, internship_id))
+                        UPDATE Internships
+                        SET LastTopicId = CurrentTopicId,
+                            CurrentTopicId = ?,
+                            AssignmentUpdatedAt = GETDATE()
+                        WHERE InternshipId = ?
+                    """, (str(topic_id), internship_id))
                     updated_count += 1
             
             conn.commit()
@@ -329,40 +330,40 @@ class ClusteringService:
         print(f" Updated {updated_count} internships")
         return updated_count
 
-    def cluster_all_internships(self, topic_version: Optional[str] = None, n_topics: str = "auto") -> Dict:
-
-     
+    def cluster_all_internships(self, topic_version=None, n_topics="auto"):
         if not topic_version:
             topic_version = f"v1.0_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
         print("\n ------Fetching internships from database...------")
         with get_db_connection() as conn:
             df = pd.read_sql("""
-                SELECT internship_id, title, description
-                FROM Internship
-                WHERE is_deleted = 0
+                SELECT InternshipId, Title, Description
+                FROM Internships
+                WHERE IsDeleted = 0
             """, conn)
         
+        print('df' , df)
         if df.empty:
             raise ValueError("No internships found in database")
-      
+        
+        df = df.rename(columns={
+            'InternshipId': 'internship_id',
+            'Title': 'title',
+            'Description': 'description'
+        })
+        
         df['combined_text'] = df.apply(
-            lambda row: combine_text_fields(row['title'], row['description']),
-            axis=1
+            lambda row: combine_text_fields(row['title'], row['description']), axis=1
         )
         df['cleaned_text'] = df['combined_text'].apply(preprocess_text)
         df = df[df['cleaned_text'].str.len() > 10].reset_index(drop=True)
         
         df, embeddings, sil_score = self.perform_clustering(df, n_topics)
-        
         keywords = self.extract_keywords(df)
         labels = self.generate_labels_from_titles(df)
         labels = self.refine_all_labels(labels, keywords)
         created_topics = self.save_topics_to_db(df, labels, keywords, sil_score, topic_version)
         updated_count = self.update_internship_assignments(df)
-        
-        print(" CLUSTERING COMPLETED SUCCESSFULLY")
-
         
         return {
             'topic_version': topic_version,

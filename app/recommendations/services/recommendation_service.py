@@ -18,12 +18,10 @@ class RecommendationService:
     ) -> Tuple[pd.DataFrame, Dict]:
         
         candidate = data_service.get_candidate(str(candidate_id)) 
-        
         if not candidate:
             raise ValueError(f"Candidate {candidate_id} not found")
         
         candidate_embedding = vector_service.get_candidate_embedding_vector(candidate_id)
-        
         if candidate_embedding is None: 
             print(f" Embedding not found for candidate {candidate_id}, using text search")
             query_text = self.text_gen.create_student_vector_text(candidate)
@@ -96,14 +94,14 @@ class RecommendationService:
             candidate = data_service.get_candidate(str(cid))
             if candidate:
                 candidates_list.append({
-                    'candidate_id': candidate['candidate_id'],
-                    'gpa': candidate.get('education', {}).get('gpa', 0),
+                    'candidate_id': candidate['CandidateId'],        # ← هنا
+                    'gpa': candidate.get('education', {}).get('Gpa', 0),
                     'education': candidate.get('education', {}),
                     'technical_skills': candidate.get('technical_skills', []),
                     'experiences': candidate.get('experiences', []),
                     'projects': candidate.get('projects', []),
                 })
-        
+                
         if not candidates_list:
             return pd.DataFrame(), internship
         

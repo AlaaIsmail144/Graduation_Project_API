@@ -71,20 +71,29 @@ class VectorService:
             }
         )
         ids = self.db_students.add_documents([doc])
+        print('finish add candidate')
         return ids[0] if ids else None
     
     def update_candidate_vector(self, candidate_id: str, vector_text: str,
                                metadata: Dict):
         self._ensure_initialized()
+        print('start delete candate')
         self.delete_candidate_vector(candidate_id)
+        print('finish delete candate , start add candidate') 
         return self.add_candidate_vector(candidate_id, vector_text, metadata)
+
     
     def delete_candidate_vector(self, candidate_id: str):
         self._ensure_initialized()
         try:
-            self.db_students.delete(
+            # بدل ما يعمل where filter، نجيب الـ ids الأول
+            results = self.db_students._collection.get(
                 where={"candidate_id": str(candidate_id)}
             )
+            print('results' ,results)
+            ids = results.get('ids', [])
+            if ids:  # لو موجود بس امسحه
+                self.db_students._collection.delete(ids=ids)
         except:
             pass  
     
@@ -141,23 +150,28 @@ class VectorService:
         )
         
         ids = self.db_internships.add_documents([doc])
+        print('internship vector is added ')
         return ids[0] if ids else None
     
     def update_internship_vector(self, internship_id: str, vector_text: str,
                                 metadata: Dict):
         self._ensure_initialized()
         self.delete_internship_vector(internship_id)
+
         return self.add_internship_vector(internship_id, vector_text, metadata)
     
     def delete_internship_vector(self, internship_id: str):
         self._ensure_initialized()
         try:
-            self.db_internships.delete(
+            results = self.db_internships._collection.get(
                 where={"internship_id": str(internship_id)}
             )
+            ids = results.get('ids', [])
+            if ids:
+                self.db_internships._collection.delete(ids=ids)
         except:
             pass  
-    
+        
     def get_candidate_embedding_vector(self, candidate_id: str) -> Optional[List[float]]:
         self._ensure_initialized()
         

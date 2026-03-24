@@ -14,23 +14,21 @@ class TextGenerator:
                 parts.append(f"Skills: {skills_text}")
         
         projects = candidate_data.get('projects', [])
-
-        for project in projects[:3]:  
-            title = project.get('title')
-            tech = project.get('technologies')
+        for project in projects[:3]:
+            title = project.get('Title')           # ← Title
+            tech = project.get('Technologies')     # ← Technologies
             if title and tech:
                 parts.append(f"Project {title} using {tech}")
         
         experiences = candidate_data.get('experiences', [])
-
-        for exp in experiences[:2]:  
-            position = exp.get('position')
-            desc = exp.get('description')
+        for exp in experiences[:2]:
+            position = exp.get('Position')         # ← Position
+            desc = exp.get('Description')          # ← Description
             if position and desc:
                 parts.append(f"Experience as {position}: {str(desc)[:100]}")
         
         education = candidate_data.get('education', {})
-        field = education.get('field_of_study')
+        field = education.get('FieldOfStudy')      # ← FieldOfStudy
         if field:
             parts.append(f"Studying {field}")
         
@@ -38,9 +36,10 @@ class TextGenerator:
         if interests:
             parts.append(f"Interested in {' '.join(interests)}")
         
-        major = candidate_data.get('major')
+        major = candidate_data.get('Major')        # ← Major
         if major:
             parts.append(f"Major: {major}")
+        print('parts' , parts)
         
         return ' . '.join(parts)
     
@@ -48,30 +47,31 @@ class TextGenerator:
     def create_internship_vector_text(internship_data: Dict) -> str:
         parts = []
         
-        title = internship_data.get('title')
+        title = internship_data.get('Title')                # ← Title
         if title:
             parts.append(f"Position: {title}")
             parts.append(f"Title: {title}")
         
-        required_field = internship_data.get('required_field')
+        required_field = internship_data.get('RequiredField')  # ← RequiredField
         if required_field:
             parts.append(f"Field: {required_field}")
         
         details = internship_data.get('details', {})
-        responsibilities = details.get('responsibilities')
+        responsibilities = details.get('Responsibilities')   # ← Responsibilities
         if responsibilities:
             parts.append(f"Responsibilities: {responsibilities}")
         
-        description = internship_data.get('description')
+        description = internship_data.get('Description')    # ← Description
         if description:
             parts.append(f"Description: {str(description)[:300]}")
         
-        location = internship_data.get('location')
+        location = internship_data.get('Location')          # ← Location
         if location:
             parts.append(f"Location: {location}")
 
-        duration = internship_data.get('duration')
+        duration = internship_data.get('Duration')          # ← Duration
         if duration:
             parts.append(f"Duration: {duration}")
         
         return ' . '.join(parts)
+    

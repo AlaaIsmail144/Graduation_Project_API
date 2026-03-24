@@ -84,8 +84,6 @@ async def cluster_all_internships_async(
     request: ClusterAllRequest,
     background_tasks: BackgroundTasks
 ):
-
-
     # 1- generate job ID
     job_id = str(uuid.uuid4())
     

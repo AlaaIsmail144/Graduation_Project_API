@@ -16,8 +16,9 @@ class SyncService:
     def process_add_candidate_bg(self, candidate_id: str):
         try:
             logger.info(f"[BG Task] Starting candidate sync: {candidate_id}")
-            
+            print('start refresh candidate')
             data_service.refresh_candidate(candidate_id)
+            print('start process candidate')
             candidate = data_service.get_candidate(candidate_id)
             
             if not candidate:
@@ -25,10 +26,12 @@ class SyncService:
                 return
             
             vector_text = self.text_gen.create_student_vector_text(candidate)
+            print('vector text' , vector_text)
             metadata = {
-                'major': str(candidate.get('major', '')),
-                'name': f"{candidate.get('full_name', '')}"
+                'major': str(candidate.get('Major', '')),      # ← Major
+                'name': str(candidate.get('FullName', ''))     # ← FullName
             }
+            print('start update candidate vector')
             vector_id = vector_service.update_candidate_vector(
                 candidate_id, vector_text, metadata
             )
@@ -39,11 +42,12 @@ class SyncService:
             logger.error(f"[BG Task] Error syncing candidate {candidate_id}: {str(e)}")
     
     def process_add_internship_bg(self, internship_id: str):
-       
         try:
             logger.info(f"[BG Task] Starting internship sync: {internship_id}")
 
+            print('start refresh internship')
             data_service.refresh_internship(internship_id)
+            print('start internship process')
             internship = data_service.get_internship(internship_id)
             
             if not internship:
@@ -52,11 +56,11 @@ class SyncService:
             
             vector_text = self.text_gen.create_internship_vector_text(internship)
             metadata = {
-                'title': str(internship.get('title', '')),
-                'location': str(internship.get('location', '')),
-                'duration': str(internship.get('duration', ''))
+                'title': str(internship.get('Title', '')),        # ← Title
+                'location': str(internship.get('Location', '')),  # ← Location
+                'duration': str(internship.get('Duration', ''))   # ← Duration
             }
-            
+            print('start update internship process')
             vector_id = vector_service.update_internship_vector(
                 internship_id, vector_text, metadata
             )
@@ -89,6 +93,6 @@ class SyncService:
             
         except Exception as e:
             logger.error(f"[BG Task] Error deleting internship {internship_id}: {str(e)}")
-    
+
 
 sync_service = SyncService()

@@ -1,46 +1,34 @@
 import pyodbc
-from .config import settings 
-
+from typing import Optional
+from .config import settings, get_connection_string
 
 class DatabaseManager:
+
     def __init__(self):
-        self.conn_str = self._build_connection_string()
-        self._connected = False
-
-    def _build_connection_string(self) -> str:
-        if settings.RECOMMENDATION_SQL_USE_WINDOWS_AUTH:
-            return (
-                'DRIVER={ODBC Driver 17 for SQL Server};'
-                f'SERVER={settings.RECOMMENDATION_SQL_SERVER};'
-                f'DATABASE={settings.RECOMMENDATION_SQL_DATABASE};'
-                'Trusted_Connection=yes;'
-            )
-        else:
-            return (
-                'DRIVER={ODBC Driver 17 for SQL Server};'
-                f'SERVER={settings.RECOMMENDATION_SQL_SERVER};'
-                f'DATABASE={settings.RECOMMENDATION_SQL_DATABASE};'
-                f'UID={settings.RECOMMENDATION_SQL_USERNAME};'
-                f'PWD={settings.RECOMMENDATION_SQL_PASSWORD};'
-            )
-
-    def _test_connection(self):
+        self.connection_string = get_connection_string()
+        self._connection: Optional[pyodbc.Connection] = None
+    
+    def get_connection(self) -> pyodbc.Connection:
         try:
-            conn = self.get_connection()
-            conn.close()
-            self._connected = True
+            if self._connection is None or self._connection.closed:
+                self._connection = pyodbc.connect(self.connection_string)
+            return self._connection
         except Exception as e:
-            raise Exception(f" Failed to connect to SQL Server: {e}")
-   
-    def get_connection(self):
-        return pyodbc.connect(self.conn_str)
- 
-    def ensure_connected(self):
-        if not self._connected:
-            self._test_connection()
+            print(f"❌ Database connection error: {e}")
+            print(f"Connection string (without password): {self.connection_string.replace(settings.RECOMMENDATION_SQL_PASSWORD, '***')}")
+            raise
+    
+    def close(self):
+        """Close database connection"""
+        if self._connection and not self._connection.closed:
+            self._connection.close()
+            self._connection = None
 
+
+# Initialize db_manager on module import
 try:
     db_manager = DatabaseManager()
+    print("✅ DatabaseManager initialized successfully")
 except Exception as e:
-    print(f" can't initialize database connection on import: {e}")
-    db_manager = None
+    print(f"⚠️  Warning: Could not initialize database connection on import: {e}")
+    db_manager = None  # Will be initialized later if needed

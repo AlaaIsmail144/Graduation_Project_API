@@ -5,11 +5,11 @@ from app.internship.services.clustering import ClusteringService
 from app.internship.services.vector_db import VectorDBService
 
 
-def check_topics_exist() -> Tuple[bool, str, int]:
+def check_topics_exist():
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM Topics WHERE is_active = 1")
+            cursor.execute("SELECT COUNT(*) FROM Topics WHERE IsActive = 1")
             count = cursor.fetchone()[0]
         
         if count > 0:

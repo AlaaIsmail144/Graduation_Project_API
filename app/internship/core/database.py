@@ -6,11 +6,15 @@ from app.internship.core.config import get_settings
 settings = get_settings()
 
 def get_connection_string() -> str:
+    
     return (
-        f"DRIVER={{{settings.INTERNSHIP_DB_DRIVER}}};" 
-        f"SERVER={settings.INTERNSHIP_DB_SERVER};"      
-        f"DATABASE={settings.INTERNSHIP_DB_NAME};"    
-        f"Trusted_Connection={settings.INTERNSHIP_DB_TRUSTED_CONNECTION};"  
+        f"DRIVER={{{settings.DB_DRIVER}}};"
+        f"SERVER={settings.DB_SERVER};"
+        f"DATABASE={settings.DB_NAME};"
+        f"UID={settings.DB_USER};"
+        f"PWD={settings.DB_PASSWORD};"
+        f"Encrypt={settings.DB_ENCRYPT};"
+        f"TrustServerCertificate={settings.DB_TRUST_SERVER_CERTIFICATE};"
     )
 
 @contextmanager

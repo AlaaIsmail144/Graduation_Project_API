@@ -20,7 +20,7 @@ class TopicInfo(BaseModel):
     description: Optional[str] = None
     document_count: Optional[int] = None
     silhouette_score: Optional[float] = None
-    is_active: bool
+    IsActive : bool
     created_at: datetime
 
 class AssignmentResult(BaseModel):

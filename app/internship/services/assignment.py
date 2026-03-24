@@ -11,23 +11,21 @@ class AssignmentService:
         self.vector_db = VectorDBService()
 
     def assign_single_internship(self, internship_id: UUID) -> Optional[Dict]:
-
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT title, description, current_topic_id
-                FROM Internship
-                WHERE internship_id = ? AND is_deleted = 0
+                SELECT Title, Description, CurrentTopicId
+                FROM Internships
+                WHERE InternshipId = ? AND IsDeleted = 0
             """, (str(internship_id),))
             
             row = cursor.fetchone()
-            
             if not row:
                 print(f"opps... Internship {internship_id} not found")
                 return None
             
             title, description, previous_topic_id = row
-        
+
         combined_text = combine_text_fields(title, description)
         cleaned_text = preprocess_text(combined_text)
         
@@ -36,9 +34,7 @@ class AssignmentService:
             return None
         
         result = self.vector_db.find_topic(cleaned_text)
-        
         if not result:
-            print(f"opps... No matching topic found for internship {internship_id}")
             return None
         
         topic_id = result['topic_id']
@@ -48,10 +44,9 @@ class AssignmentService:
         
         with get_db_connection() as conn:
             cursor = conn.cursor()
-
             cursor.execute("""
-                SELECT topic_id FROM Topics
-                WHERE topic_id = ? AND is_active = 1
+                SELECT TopicId FROM Topics
+                WHERE TopicId = ? AND IsActive = 1
             """, (topic_id,))
             
             if not cursor.fetchone():
@@ -59,16 +54,14 @@ class AssignmentService:
                 return None
 
             cursor.execute("""
-                UPDATE Internship
-                SET last_topic_id = current_topic_id,
-                    current_topic_id = ?,
-                    assignment_updated_at = GETDATE()
-                WHERE internship_id = ?
+                UPDATE Internships
+                SET LastTopicId = CurrentTopicId,
+                    CurrentTopicId = ?,
+                    AssignmentUpdatedAt = GETDATE()
+                WHERE InternshipId = ?
             """, (topic_id, str(internship_id)))
             
             conn.commit()
-        
-        print(f" assigned internship {internship_id} to topic {topic_number}: {label}")
         
         return {
             'internship_id': str(internship_id),
@@ -78,7 +71,7 @@ class AssignmentService:
             'confidence': confidence,
             'previous_topic_id': previous_topic_id
         }
-    
+        
     def assign_batch_internships(self, internship_ids: List[UUID]) -> Dict:
     
         print(f"\n process batch assignment for {len(internship_ids)} internships")
