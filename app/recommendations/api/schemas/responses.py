@@ -16,8 +16,8 @@ class InternshipSearchResult(BaseModel):
 
 class SearchInternshipsResponse(BaseModel):
     query: str
-    total_results: int
-    results: List[InternshipSearchResult]
+    total: int
+    ids: List[str]
 
 class InternshipIDsResponse(BaseModel):
     candidate_id: str

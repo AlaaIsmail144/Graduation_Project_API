@@ -18,6 +18,7 @@ class RecommendationService:
     ) -> Tuple[pd.DataFrame, Dict]:
         
         candidate = data_service.get_candidate(str(candidate_id)) 
+        print('candidate' , candidate)
         if not candidate:
             raise ValueError(f"Candidate {candidate_id} not found")
         
@@ -44,6 +45,7 @@ class RecommendationService:
             return pd.DataFrame(), candidate
     
         internship_ids = [doc.metadata.get('internship_id') for doc in docs]
+        print('internship_ids' , internship_ids)
         internships_list = []
         
         for iid in internship_ids:
@@ -55,6 +57,7 @@ class RecommendationService:
             return pd.DataFrame(), candidate
         
         internships_df = pd.DataFrame(internships_list)
+        print('internships_df' , internships_df)
         ranked_df = ranking_service.rerank_internships(
             candidate, internships_df, similarity_map
         )

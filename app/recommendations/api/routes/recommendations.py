@@ -19,14 +19,14 @@ async def get_internship_recommendation_ids(
         recommendations_df, candidate = recommendation_service.get_internship_recommendations(
             candidate_id=candidate_id,
         )
+        print('recommendations_df' , recommendations_df)
         if recommendations_df.empty:
             return InternshipIDsResponse(
                 candidate_id=candidate_id,
                 total=0,
                 ids=[]
             )
-        internship_ids = [str(iid) for iid in recommendations_df['internship_id'].tolist()]
-        
+        internship_ids = [str(iid) for iid in recommendations_df['InternshipId'].tolist()]  # ← InternshipId
         return InternshipIDsResponse(
             candidate_id=candidate_id,
             total=len(internship_ids),

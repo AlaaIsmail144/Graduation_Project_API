@@ -20,16 +20,16 @@ class RankingService:
         }
     
     def rerank_internships(self, candidate: Dict, internships_df: pd.DataFrame,
-                          similarity_map: Dict[str, float]) -> pd.DataFrame:
+                      similarity_map: Dict[str, float]) -> pd.DataFrame:
         
         scores = []
-  
+
         tech_skills = [str(s).lower() for s in candidate.get('technical_skills', [])]
         soft_skills = [str(s).lower() for s in candidate.get('soft_skills', [])]
         experiences = candidate.get('experiences', [])
         projects = candidate.get('projects', [])
-        field = str(candidate.get('education', {}).get('field_of_study', '')).lower()
-        gpa = candidate.get('education', {}).get('gpa', 0)
+        field = str(candidate.get('education', {}).get('FieldOfStudy', '')).lower()  # ← FieldOfStudy
+        gpa = candidate.get('education', {}).get('Gpa', 0)                           # ← Gpa
         app_history = candidate.get('application_history', pd.DataFrame())
         saved = candidate.get('saved_internships', [])
         
@@ -37,36 +37,36 @@ class RankingService:
         if not app_history.empty:
             for _, app in app_history.iterrows():
                 intern_text = str(internships_df[
-                    internships_df['internship_id'] == app['internship_id']
-                ].get('required_field', '')).lower()
+                    internships_df['InternshipId'] == app['InternshipId']  # ← PascalCase
+                ].get('RequiredField', '')).lower()
                 if intern_text:
                     applied_fields.add(intern_text)
         
         for _, internship in internships_df.iterrows():
             score = 0.0
- 
-            required_field = str(internship.get('required_field', '')).lower()
+
+            required_field = str(internship.get('RequiredField', '')).lower()    # ← RequiredField
             if field and (field in required_field or any(
                 word in required_field for word in field.split()
             )):
                 score += self.weights['field_match']
 
             intern_text = (
-                str(internship.get('description', '')).lower() + " " +
-                str(internship.get('details', {}).get('responsibilities', '')).lower()
+                str(internship.get('Description', '')).lower() + " " +           # ← Description
+                str(internship.get('details', {}).get('Responsibilities', '')).lower()  # ← Responsibilities
             )
             
             tech_matches = ScoringUtils.calculate_skill_match(tech_skills, intern_text)
             score += min(tech_matches * 2, self.weights['technical_skills'])
 
-            title_lower = str(internship.get('title', '')).lower()
+            title_lower = str(internship.get('Title', '')).lower()               # ← Title
             if any(kw in title_lower for kw in ['marketing', 'hr', 'management', 'business']):
                 soft_matches = ScoringUtils.calculate_skill_match(soft_skills, intern_text)
                 score += min(soft_matches * 1.5, self.weights['soft_skills'])
 
             for exp in experiences:
-                exp_position = str(exp.get('position', '')).lower()
-                exp_desc = str(exp.get('description', '')).lower()
+                exp_position = str(exp.get('Position', '')).lower()              # ← Position
+                exp_desc = str(exp.get('Description', '')).lower()               # ← Description
                 
                 if exp_position and exp_position in title_lower:
                     score += 4
@@ -75,7 +75,7 @@ class RankingService:
                 score += min(overlap / 10, 4)
 
             for project in projects[:3]:
-                tech = str(project.get('technologies', '')).lower()
+                tech = str(project.get('Technologies', '')).lower()              # ← Technologies
                 if tech:
                     tech_list = [t.strip() for t in tech.split(',')]
                     matches = sum(1 for t in tech_list if t in intern_text)
@@ -86,31 +86,31 @@ class RankingService:
 
             if saved:
                 if required_field in [
-                    str(internships_df[internships_df['internship_id'] == sid]
-                        .get('required_field', '')).lower()
+                    str(internships_df[internships_df['InternshipId'] == sid]  # ← InternshipId
+                        .get('RequiredField', '')).lower()                      # ← RequiredField
                     for sid in saved
                 ]:
                     score += self.weights['saved_similarity']
- 
+
             if pd.notna(gpa):
                 if gpa >= 3.5:
                     score += self.weights['gpa_bonus']
                 elif gpa >= 3.0:
                     score += self.weights['gpa_bonus'] * 0.5
-  
+
             company_data = internship.get('company', {})
-            if company_data.get('verified') == 1:
+            if company_data.get('Verified') == 1:                               # ← Verified
                 score += self.weights['verified_company']
 
             try:
-                created_at = pd.to_datetime(internship.get('created_at'))
+                created_at = pd.to_datetime(internship.get('CreatedAt'))        # ← CreatedAt
                 days_old = (pd.Timestamp.now() - created_at).days
                 recency_score = max(0, 60 - days_old) / 30 * self.weights['recency']
                 score += recency_score
             except:
                 pass
 
-            distance = similarity_map.get(str(internship['internship_id']), 2.0)
+            distance = similarity_map.get(str(internship['InternshipId']), 2.0) # ← InternshipId
             similarity_score = ScoringUtils.calculate_similarity_score(distance)
             score += self.weights['similarity'] * similarity_score
             
@@ -119,41 +119,41 @@ class RankingService:
         internships_df = internships_df.copy()
         internships_df['match_score'] = scores
         return internships_df.sort_values('match_score', ascending=False)
-    
+        
     def rerank_candidates(self, internship: Dict, candidates_df: pd.DataFrame,
-                         similarity_map: Dict[str, float]) -> pd.DataFrame:
-       
+                     similarity_map: Dict[str, float]) -> pd.DataFrame:
+        
         scores = []
- 
-        required_field = str(internship.get('required_field', '')).lower()
+
+        required_field = str(internship.get('RequiredField', '')).lower()       # ← RequiredField
         intern_text = (
-            str(internship.get('description', '')).lower() + " " +
-            str(internship.get('details', {}).get('responsibilities', '')).lower()
+            str(internship.get('Description', '')).lower() + " " +              # ← Description
+            str(internship.get('details', {}).get('Responsibilities', '')).lower()
         )
-        title_lower = str(internship.get('title', '')).lower()
-    
+        title_lower = str(internship.get('Title', '')).lower()                  # ← Title
+
         for _, candidate in candidates_df.iterrows():
             score = 0.0
-  
-            field = str(candidate.get('education', {}).get('field_of_study', '')).lower()
+
+            field = str(candidate.get('education', {}).get('FieldOfStudy', '')).lower()  # ← FieldOfStudy
             if field and (field in required_field or any(
                 word in required_field for word in field.split()
             )):
                 score += self.weights['field_match']
-      
+
             tech_skills = candidate.get('technical_skills', [])
             tech_matches = ScoringUtils.calculate_skill_match(tech_skills, intern_text)
             score += min(tech_matches * 2, self.weights['technical_skills'])
-  
+
             experiences = candidate.get('experiences', [])
             for exp in experiences:
-                exp_position = str(exp.get('position', '')).lower()
+                exp_position = str(exp.get('Position', '')).lower()             # ← Position
                 if exp_position and exp_position in title_lower:
                     score += 4
 
             projects = candidate.get('projects', [])
             for project in projects[:3]:
-                tech = str(project.get('technologies', '')).lower()
+                tech = str(project.get('Technologies', '')).lower()             # ← Technologies
                 if tech:
                     tech_list = [t.strip() for t in tech.split(',')]
                     matches = sum(1 for t in tech_list if t in intern_text)
